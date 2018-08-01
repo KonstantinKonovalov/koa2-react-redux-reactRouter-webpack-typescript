@@ -1,0 +1,30 @@
+.header {
+    color: red;
+    font-size: 32px;
+}
+
+html,
+body,
+.page,
+#app {
+    height: 100%
+}
+
+a {
+    margin-right: 15px;
+}
+
+.container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+}
+
+.navigation {
+    position: absolute;
+    left: 0;
+    right: 0;
+    text-align: center;
+}

@@ -1,0 +1,68 @@
+const { parse } = require('url');
+const webpack = require('webpack');
+const webpackConfig = require('../webpack.config');
+const { clean } = require('../scripts/task-clean');
+const { buildServer } = require('../scripts/task-build-server');
+
+const { HOST = '0.0.0.0', PORT = 3000, BACKEND = '' } = process.env;
+const { getArgv } = require('../scripts/argv');
+
+const port = getArgv(process.argv, '--port') || PORT;
+const host = getArgv(process.argv, '--host') || HOST;
+const backend = getArgv(process.argv, '--backend') || BACKEND;
+
+const pad = (n) => n < 10 ? `0${n}` : `${n}`;
+
+const time = (ms) => {
+    const date = new Date();
+    const end = new Date((ms || Date.now()) + date.getTimezoneOffset());
+    const hh = pad(end.getHours());
+    const mm = pad(end.getMinutes());
+    const ss = pad(end.getSeconds());
+
+    return `${hh}:${mm}:${ss}`;
+};
+
+const compilation = (compiler) => new Promise((resolve, reject) => {
+    compiler.watch({
+        aggregateTimeout: 1000,
+        ignored: /node_modules/
+    }, (err, stats) => {
+        if (err) {
+            console.error(err);
+            reject(err);
+        } else if (stats.hasErrors()) {
+            console.error(stats.toString('errors-only'));
+            reject(err);
+        } else {
+            console.info(
+                `[${time(stats.endTime)}]`,
+                `Compiled successfully.`,
+                `(${stats.endTime - stats.startTime} ms)`
+            );
+            resolve(stats);
+        }
+    });
+
+    compiler.plugin('compile', () => {
+        console.info(`[${time()}] Compiling...`);
+    });
+}).catch(() => {
+    process.exit(1);
+});
+
+async function dev() {
+    const webpackCompiler = webpack(webpackConfig);
+
+    await clean();
+    await compilation(webpackCompiler);
+    await buildServer();
+
+    const { app } = require('../build/server/app');
+
+    app.listen(port, host, () => {
+        console.info(`[INFO] Server started and listening on ${host}:${port}`);
+    });
+}
+
+dev();
